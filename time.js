@@ -7,7 +7,8 @@
 // > node time.js
 // on TTY termianl
 
-var tty = require('tty');
+var tty = require('tty'),
+	fs = require('fs');
 
 try { require('keypress')(process.stdin); } catch(e) {}
 
@@ -53,6 +54,7 @@ var refresh=function(){
 		else 
 			timer[i]++;
 		process.stdout.write(["\033[00;33m\033[",(i+1),";2H",(timer[i]==0?'		 ':timetostr(timer[i]))].join(''));
+		process.stdout.write(["\033[00;37m\033[",(i+1),";15H",items[i]].join(''));
 	}
 	process.stdout.write(["\033[00;33m\033[",(items.length+1),";2H        "].join(''));
 	process.stdout.write(["\033[",row,";",(col+14),"H\033[00;37m"].join(''));
@@ -66,7 +68,7 @@ process.stdin.on('keypress', function(chr, key) {
 		col+=(chr.charCodeAt(0)<9000)?1:2;
 		process.stdout.write(chr);
 	}
-	else if (key.name.length==1) {
+	else if (key.name.length==1 && !key.ctrl) {
 		item=[item,key.name].join('');
 		col++;
 		process.stdout.write(key.name);
@@ -77,8 +79,8 @@ process.stdin.on('keypress', function(chr, key) {
 			if(item=='') {
 				if (items.length==row) {
 					process.stdout.write(["\033[",(items.length),';2H												   \033[',row,';',(col+14),'H'].join(''));
-					items.remove(items.length-1);
 					timer.remove(items.length-1);
+					items.remove(items.length-1);
 				}
 				else if(items.length>row) break;
 			} else {
@@ -153,10 +155,20 @@ process.stdin.on('keypress', function(chr, key) {
 			break;
 	}
 	if (key && key.ctrl && key.name == 'c') {
-		process.stdout.write("\n");
-		console.log('Exit');
-		console.log(items);
-		process.exit()
+		var backup = {
+			items:items,
+			timer:timer,
+			item:item,
+			row:row,
+			col:col,
+			cnt:cnt
+		};
+		require('fs').writeFile('time.save.json', JSON.stringify(backup), 'utf-8', function() {
+			process.stdout.write("\n");
+			console.log('Exit');
+			console.log(items);
+			process.exit()
+		});
 	}
 });
 
@@ -165,5 +177,18 @@ process.stdin.resume();
 tty.setRawMode(true);
 process.stdout.write('\033[2J\033[1;15H');
 
-refresh();
+if (fs.existsSync('time.save.json')) {
+	fs.readFile('time.save.json', 'utf-8', function (err, data) {
+		var backup = JSON.parse(data);
+		items = backup.items;
+		timer = backup.timer;
+		item = backup.item;
+		row = backup.row;
+		col = backup.col;
+		cnt = backup.cnt;
+		refresh();
+	});
+} else {
+	refresh();
+}
 
