@@ -1,0 +1,7 @@
+{
+    "name": "timemanageronstack",
+    "version": "0.0.1",
+    "optionalDependencies": {
+		"keypress":""
+    }
+}

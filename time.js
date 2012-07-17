@@ -8,6 +8,9 @@
 // on TTY termianl
 
 var tty = require('tty');
+
+try { require('keypress')(process.stdin); } catch(e) {}
+
 var timer=[0];
 var items=[];
 var item='';
@@ -157,6 +160,7 @@ process.stdin.on('keypress', function(chr, key) {
 	}
 });
 
+process.stdin.setRawMode(true);
 process.stdin.resume();
 tty.setRawMode(true);
 process.stdout.write('\033[2J\033[1;15H');
